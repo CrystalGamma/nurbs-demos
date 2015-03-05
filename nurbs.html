@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<body>
+<canvas id="canvas" width="800" height="600">No &lt;canvas&gt; support</canvas>
+<script>"use strict";
+var cpoints = [
+	[200,0],
+	[200,500]];
+var knots = [0,1];
+
+function linear(startx, starty, endx, endy) {
+	startx = parseFloat(startx);
+	starty = parseFloat(starty);
+	endx = parseFloat(endx);
+	endy = parseFloat(endy);
+	
+	if (isNaN(startx) || isNaN(starty) || isNaN(endx) || isNaN(endy) || startx >= endx)
+		return function(){return 0;};
+	var slope = (endy - starty) / (endx - startx);
+	var y0 = starty-slope*startx;
+	return function(x){return x*slope + y0;};
+}
+
+function interpolate(funcs, points, pos) {
+	pos = parseFloat(pos);
+	var len = funcs.length|0;
+	if (len !== points.length|0)
+		throw "number of basis functions and points differ";
+	if (!len)
+		throw "no points to interpolate";
+	var numComponents = points[0].length|0;
+	var res = new Array(numComponents);
+	for (var comp = 0; comp < numComponents; comp = comp+1|0)
+		res[comp] = 0;
+	for (var i = 0; i < len; i = i+1|0) {
+		var point = points[i];
+		var weight = funcs[i](pos);
+		if ((point.length|0) !== numComponents)
+			throw "number of components in points differ";
+		for (comp = 0; comp < numComponents; comp = comp+1|0) {
+			res[comp] += point[comp]*weight;
+		}
+	}
+	return res;
+}
+
+function combine(f1, f2) {
+	return function(x) {return f1(x) * f2(x);};
+}
+
+function buildBasicFunctions(knots, funcs) {
+}
+
+function drawNurbs(ctx, cpoints, knots) {
+	var numKnots = knots.length|0;
+	var numPoints = cpoints.length|0;
+	var targetDegree = Math.floor(numKnots-numPoints/2);
+	var basisFunctions = [];
+	for (var i = 1; i < numKnots; i = i+1|0) {
+		var knot0 = knots[i-1|0];
+		var knot1 = knots[i];
+		basisFunctions.push([
+			linear(knot0, 1, knot1, 0),
+			linear(knot0, 0, knot1, 1)]);
+	}
+	ctx.beginPath();
+	var point = interpolate(basisFunctions[0],
+		cpoints.slice(0,targetDegree+2|0), 0);
+	ctx.moveTo(point[0], point[1]);
+	for (var section = 1|0; section < numKnots; section = section+1|0) {
+		point = interpolate(basisFunctions[section-1|0],
+			cpoints.slice(section-1, (section+targetDegree|0)+1|0), 1);
+		ctx.lineTo(point[0], point[1]);
+	}
+	ctx.stroke();
+}
+
+drawNurbs(document.getElementById('canvas').getContext('2d'), cpoints, knots);
+</script>
+</body>
+</html>
