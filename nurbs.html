@@ -45,29 +45,51 @@ function interpolate(funcs, points, pos) {
 	return res;
 }
 
-function combine(f1, f2) {
-	return function(x) {return f1(x) * f2(x);};
+function constantOne(){return 1}
+
+function basisFunction(knots) {
+	if (knots.length === 0)
+		return constantOne;
+	var end = (knots.length|0)-1|0;
+	var left = basisFunction(knots.slice(0, end));
+	var right = basisFunction(knots.slice(1));
+	var start = knots[1], stop = knots[end];
+	var w1 = linear(knots[0],0, knots[end-1|0],1);
+	var w2 = linear(start,1, stop,0);
+	return function(x) {
+		if (x < start) return left(x)*w1(x);
+		if (x > end) return right(x)*w2(x);
+		return left(x)*w1(x) + right(x)*w2(x);
+	};
 }
 
-function buildBasicFunctions(knots, funcs) {
+function plotFunc(ctx, func, start, end) {
+	var step = (end-start)/100;
+	ctx.beginPath();
+	ctx.moveTo(0, 600-func(start)*600);
+	for (var i = 1; i < 10; i = i+1|0) {
+		var v = func(start+step*i);
+		ctx.lineTo(80*i, 600-v*600);
+		console.log(v);
+	}
+	ctx.lineTo(800, 600-func(end)*600);
+	ctx.stroke();
 }
 
 function drawNurbs(ctx, cpoints, knots) {
 	var numKnots = knots.length|0;
+	knots = knots.slice();
+	knots.unshift(knots[0]);
+	knots.push(knots[numKnots]);
 	var numPoints = cpoints.length|0;
 	var targetDegree = Math.floor((numKnots-numPoints|0)/2);
-	var basisFunctions = [];
-	basisFunctions.push(linear(knots[0], 1, knots[1], 0));
-	for (var i = 1; i < (numKnots-1|0); i = i+1|0) {
-		basisFunctions.push(function(i) {
-			var knot = knots[i];
-			var f1 = linear(knots[i-1|0], 0, knot, 1);
-			var f2 = linear(knot, 1, knots[i+1|0], 0);
-			return function(x) {
-				return x < knot ? f1(x) : f2(x);};	// alternativ: Math.max(f1(x),f2(x))
-		}(i));
+	var basisFunctions = new Array(numPoints);
+	for (var i = 0; i < numPoints; i = i+1|0) {
+		var func = basisFunction(knots.slice(i, i+((targetDegree+1)<<1)|0));
+		plotFunc(ctx, func, knots[1], knots[numKnots]);
+		basisFunctions[i] = func;
 	}
-	basisFunctions.push(linear(knots[numKnots-2|0], 0, knots[numKnots-1|0], 1));
+
 	ctx.beginPath();
 	var point = interpolate(basisFunctions.slice(0, targetDegree+2|0),
 		cpoints.slice(0,targetDegree+2|0), knots[0]);
