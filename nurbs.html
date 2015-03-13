@@ -5,19 +5,17 @@
 <script>"use strict";
 
 function plotFunc(ctx, func, start, end) {
-	var step = (end-start)/100;
+	var step = (end-start)/1000;
 	ctx.beginPath();
 	ctx.moveTo(0, 600-func(start)*600);
-	for (var i = 1; i < 10; i = i+1|0) {
+	for (var i = 1; i < 999; i = i+1|0) {
 		var v = func(start+step*i);
-		ctx.lineTo(80*i, 600-v*600);
+		ctx.lineTo(.8*i, 600-v*600);
 		console.log(v);
 	}
 	ctx.lineTo(800, 600-func(end)*600);
 	ctx.stroke();
 }
-
-
 
 function lerp(a, b, pos) {
 	var dimensions = a.length|0;
@@ -62,7 +60,9 @@ function rationalBezier(ctx, cpoints) {
 	ctx.stroke();
 }
 
-var cpoints = [[
+var ctx = document.getElementById('canvas').getContext('2d');
+
+var bezier_circle = [[
 	[100,300,1],
 	[100,0,1],
 	[800,0,2]
@@ -79,8 +79,45 @@ var cpoints = [[
 	[100,600,1],
 	[200,600,2]
 ]];
+//for (var i in bezier_circle) rationalBezier(ctx, bezier_circle[i]);
 
-for (var i in cpoints) rationalBezier(document.getElementById('canvas').getContext('2d'), cpoints[i]);
+function bSplineBasisFuncs(degree, knotvector) {
+	degree = degree|0;
+	var len = (knotvector.length|0)-1|0;
+	var res = new Array(len);
+	
+	if (degree == 0) {
+		var len = (knotvector.length|0)-1|0;
+		var res = new Array(len);
+		for (var i = 0; i < len; i = i+1|0)
+			res[i] = function(start,end){return function(x){
+				return x>=start && x<end ? 1 : 0;
+			};}(knotvector[i],knotvector[i+1|0]);
+		return res;
+	}
+	var subFuncs = bSplineBasisFuncs(degree-1|0, knotvector);
+	len = (subFuncs.length|0)-1|0;
+	res = new Array(len);
+	for (i = 0; i < len; i = i+1|0)
+		res[i] = function(f, g, start, stop1, stop2, end){
+			var diff1 = stop2 - start;
+			var diff2 = end - stop1;
+			if (diff1<=0 && diff2<=0)
+				return function(){return 0};
+			if (diff1<=0) 
+				return function(x){return (end-x)/diff2*g(x);};
+			if (diff2<=0)
+				return function(x){return (x-start)/diff1*f(x);};
+			return function(x){return (end-x)/diff2*g(x) + (x-start)/diff1*f(x);};
+		}(subFuncs[i], subFuncs[i+1|0],
+		knotvector[i], knotvector[i+1|0], knotvector[i+degree|0], knotvector[(i+degree|0)+1|0]);
+	return res;
+}
+
+var bfuncs = bSplineBasisFuncs(3, [0,0,0,0,1,2,3,4,4,5,5,5,5]);
+console.log(bfuncs);
+for (var i in bfuncs)
+	plotFunc(ctx, bfuncs[i], 0, 5);
 </script>
 </body>
 </html>
