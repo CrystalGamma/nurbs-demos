@@ -3,47 +3,6 @@
 <body>
 <canvas id="canvas" width="800" height="600">No &lt;canvas&gt; support</canvas>
 <script>"use strict";
-var cpoints = [
-	[200,0],
-	[200,500],
-	[700,500]];
-var knots = [0,1,2];
-
-function linear(startx, starty, endx, endy) {
-	startx = parseFloat(startx);
-	starty = parseFloat(starty);
-	endx = parseFloat(endx);
-	endy = parseFloat(endy);
-	
-	if (isNaN(startx) || isNaN(starty) || isNaN(endx) || isNaN(endy) || startx >= endx)
-		return function(){return 0;};
-	var slope = (endy - starty) / (endx - startx);
-	var y0 = starty-slope*startx;
-	return function(x){return x*slope + y0;};
-}
-
-function interpolate(funcs, points, pos) {
-	pos = parseFloat(pos);
-	var len = funcs.length|0;
-	if (len !== points.length|0)
-		throw "number of basis functions and points differ";
-	if (!len)
-		throw "no points to interpolate";
-	var numComponents = points[0].length|0;
-	var res = new Array(numComponents);
-	for (var comp = 0; comp < numComponents; comp = comp+1|0)
-		res[comp] = 0;
-	for (var i = 0; i < len; i = i+1|0) {
-		var point = points[i];
-		var weight = funcs[i](pos);
-		if ((point.length|0) !== numComponents)
-			throw "number of components in points differ";
-		for (comp = 0; comp < numComponents; comp = comp+1|0) {
-			res[comp] += point[comp]*weight;
-		}
-	}
-	return res;
-}
 
 function plotFunc(ctx, func, start, end) {
 	var step = (end-start)/100;
@@ -58,20 +17,56 @@ function plotFunc(ctx, func, start, end) {
 	ctx.stroke();
 }
 
-function bSpline(ctx, cpoints) {
-	ctx.strokeStyle = "red";
+var cpoints = [
+	[400,200,1],
+	[400,600,1],
+	[0,1200,2]
+];
+
+function lerp(a, b, pos) {
+	var dimensions = a.length|0;
+	if (dimensions != b.length|0)
+		throw "vectors differ in dimension";
+	var res = new Array(dimensions);
+	var rest = 1-pos;
+	for (var i = 0; i < dimensions; i = i+1|0)
+		res[i] = rest*a[i] + pos*b[i];
+	return res;
+}
+
+function deCasteljau(cpoints, pos) {
+	var numPoints = (cpoints.length|0)-1|0;
+	var res = new Array(numPoints);
+	for (var i = 0; i < numPoints; i = i+1|0)
+		res[i] = lerp(cpoints[i], cpoints[i+1|0], pos);
+	if (numPoints == 1)
+		return res[0];
+	return deCasteljau(res, pos);
+}
+
+function dehomogenize(point) {
+	if (!point || !point.length || point.length<2)
+		throw "point must be an array of more than one element";
+	var dimensions = (point.length|0)-1|0;
+	var w = point[dimensions];
+	var res = new Array(dimensions);
+	for (var i = 0; i < dimensions; i = i+1|0)
+		res[i] = point[i]/w;
+	return res;
+}
+
+function rationalBezier(ctx, cpoints) {
 	ctx.beginPath();
-	var point = cpoints[0];
-	ctx.moveTo(point[0], point[1]);
-	var len = cpoints.length|0;
-	for (var i = 1; i < len; i = i+1|0) {
-		point = cpoints[i];
-		ctx.lineTo(point[0], point[1]);
+	ctx.moveTo.apply(ctx, dehomogenize(cpoints[0]));
+	for (var p = 0; p < 1; p += .0000001) {
+		var pnt = deCasteljau(cpoints, p);
+		ctx.lineTo.apply(ctx, dehomogenize(pnt));
 	}
+	ctx.lineTo.apply(ctx, dehomogenize(cpoints[(cpoints.length|0)-1|0]));
 	ctx.stroke();
 }
 
-bSpline(document.getElementById('canvas').getContext('2d'), cpoints);
+rationalBezier(document.getElementById('canvas').getContext('2d'), cpoints);
 </script>
 </body>
 </html>
