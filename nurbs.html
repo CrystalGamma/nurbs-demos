@@ -17,11 +17,7 @@ function plotFunc(ctx, func, start, end) {
 	ctx.stroke();
 }
 
-var cpoints = [
-	[400,200,1],
-	[400,600,1],
-	[0,1200,2]
-];
+
 
 function lerp(a, b, pos) {
 	var dimensions = a.length|0;
@@ -58,7 +54,7 @@ function dehomogenize(point) {
 function rationalBezier(ctx, cpoints) {
 	ctx.beginPath();
 	ctx.moveTo.apply(ctx, dehomogenize(cpoints[0]));
-	for (var p = 0; p < 1; p += .0000001) {
+	for (var p = 0; p < 1; p += .0001) {
 		var pnt = deCasteljau(cpoints, p);
 		ctx.lineTo.apply(ctx, dehomogenize(pnt));
 	}
@@ -66,7 +62,25 @@ function rationalBezier(ctx, cpoints) {
 	ctx.stroke();
 }
 
-rationalBezier(document.getElementById('canvas').getContext('2d'), cpoints);
+var cpoints = [[
+	[100,300,1],
+	[100,0,1],
+	[800,0,2]
+],[
+	[400,0,1],
+	[700,0,1],
+	[1400,600,2]
+],[
+	[700,300,1],
+	[700,600,1],
+	[800,1200,2]
+],[
+	[400,600,1],
+	[100,600,1],
+	[200,600,2]
+]];
+
+for (var i in cpoints) rationalBezier(document.getElementById('canvas').getContext('2d'), cpoints[i]);
 </script>
 </body>
 </html>
