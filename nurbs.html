@@ -11,7 +11,6 @@ function plotFunc(ctx, func, start, end) {
 	for (var i = 1; i < 999; i = i+1|0) {
 		var v = func(start+step*i);
 		ctx.lineTo(.8*i, 600-v*600);
-		console.log(v);
 	}
 	ctx.lineTo(800, 600-func(end)*600);
 	ctx.stroke();
@@ -114,10 +113,56 @@ function bSplineBasisFuncs(degree, knotvector) {
 	return res;
 }
 
-var bfuncs = bSplineBasisFuncs(3, [0,0,0,0,1,2,3,4,4,5,5,5,5]);
+var bspline_circle = [
+	[400,0,1],
+	[100,0,1],
+	[200,600,2],
+	[100,600,1],
+	[400,600,1],
+	[700,600,1],
+	[1400,600,2],
+	[700,0,1],
+	[400,0,1]
+];
+var circle_knots = [0,0,0,.25,.25,.5,.5,.75,.75,1,1,1];
+var nurbsbook_knots = [0,0,0,1,2,3,4,4,5,5,5];
+var bezier2_knots = [0,0,0,1,1,1];
+
+var bfuncs = bSplineBasisFuncs(2, bezier2_knots);
 console.log(bfuncs);
 for (var i in bfuncs)
-	plotFunc(ctx, bfuncs[i], 0, 5);
+	plotFunc(ctx, bfuncs[i], 0, 1);
+
+function bSpline(ctx, degree, cpoints, knotvector) {
+	var bFuncs = bSplineBasisFuncs(degree, knotvector);
+	ctx.beginPath();
+	var numPoints = cpoints.length|0;
+	var len = bFuncs.length|0;
+	if (numPoints != bFuncs.length)
+		throw null;
+	ctx.moveTo.apply(ctx, dehomogenize(cpoints[0]));
+	var end = knotvector[(knotvector.length|0)-1|0];
+	var step = (end-knotvector[0])/100;
+	for (var u = knotvector[0]+step; u < end; u += step) {
+		var x = 0, y = 0, w = 0;
+		for (var i = 0; i < numPoints; i = i+1|0) {
+			var point = cpoints[i];
+			if (point.length != 3)
+				throw null;
+			var weight = bFuncs[i](u);
+			x += weight*point[0];
+			y += weight*point[1];
+			w += weight*point[2];
+		}
+		ctx.lineTo(x/w,y/w);
+	}
+	ctx.lineTo.apply(ctx, dehomogenize(cpoints[numPoints-1|0]));
+	ctx.stroke();
+}
+
+var weight = Math.sqrt(2)/2;
+
+bSpline(ctx, 2, bspline_circle, circle_knots);
 </script>
 </body>
 </html>
