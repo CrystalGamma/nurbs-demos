@@ -5,7 +5,7 @@
 <script src="splines.js"></script>
 <script>"use strict";
 /*
-Various spline-related demos
+De Casteljau algorithm demo
     Copyright (C) 2015  Jona Stubbe
 
     This program is free software; you can redistribute it and/or modify
@@ -20,54 +20,40 @@ Various spline-related demos
 
     You should have received a copy of the GNU General Public License along
     with this program; if not, write to the Free Software Foundation, Inc.,
-    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.*/
+    51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA. */
 
 var ctx = document.getElementById('canvas').getContext('2d');
 
-var bezier_circle = [[
-	[100,300,1],
-	[100,0,1],
-	[800,0,2]
-],[
-	[400,0,1],
-	[700,0,1],
-	[1400,600,2]
-],[
-	[700,300,1],
-	[700,600,1],
-	[800,1200,2]
-],[
-	[400,600,1],
-	[100,600,1],
-	[200,600,2]
-]];
-//for (var i in bezier_circle) rationalBezier(ctx, bezier_circle[i]);
+var cpoints = [[0,600],[400,0],[800,600]];
 
-
-
-var bspline_circle = [
-	[400,0,1],
-	[100,0,1],
-	[200,600,2],
-	[100,600,1],
-	[400,600,1],
-	[700,600,1],
-	[1400,600,2],
-	[700,0,1],
-	[400,0,1]
-];
-var circle_knots = [0,0,0,.25,.25,.5,.5,.75,.75,1,1,1];
-var nurbsbook_knots = [0,0,0,1,2,3,4,4,5,5,5];
-var bezier2_knots = [0,0,0,1,1,1];
-
-var bfuncs = bSplineBasisFuncs(2, bezier2_knots);
-console.log(bfuncs);
-for (var i in bfuncs)
-	plotFunc(ctx, bfuncs[i], 0, 1);
-
-var weight = Math.sqrt(2)/2;
-
-bSpline(ctx, 2, bspline_circle, circle_knots);
+var step = 0.02;
+var pos = 0;
+var vizDeCasteljau = function(ctx, cpoints, pos) {
+	ctx.fillStyle = "red";
+	var len = (cpoints.length|0)-1|0;
+	var red = new Array(len);
+	ctx.beginPath();
+	ctx.moveTo(cpoints[0][0],cpoints[0][1]);
+	for (var i = 0; i < len; i = i+1|0) {
+		ctx.lineTo(cpoints[i+1|0][0],cpoints[i+1|0][1]);
+		red[i] = lerp(cpoints[i],cpoints[i+1|0], pos);
+		ctx.fillRect(red[i][0]-5,red[i][1]-5, 10, 10);
+	}
+	ctx.stroke();
+	vizDeCasteljau(ctx, red, pos);
+};
+var paint = function() {
+	pos += step;
+	if (step > 0 && pos > 1) {
+		pos = 1;
+		step = -step;
+	} else if (step < 0 && pos < 0) {
+		pos = 0;
+		step = -step;
+	}
+	vizDeCasteljau(ctx, cpoints, pos);
+};
+var interval = setInterval(paint, 50);
 </script>
 </body>
 </html>
