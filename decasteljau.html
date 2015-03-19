@@ -26,7 +26,7 @@ var ctx = document.getElementById('canvas').getContext('2d');
 
 var cpoints = [[0,600],[400,0],[800,600]];
 
-var step = 0.02;
+var step = 0.01;
 var pos = 0;
 var vizDeCasteljau = function(ctx, cpoints, pos) {
 	ctx.fillStyle = "red";
@@ -42,6 +42,16 @@ var vizDeCasteljau = function(ctx, cpoints, pos) {
 	ctx.stroke();
 	vizDeCasteljau(ctx, red, pos);
 };
+var baseBezier = function(ctx, cpoints) {
+	ctx.beginPath();
+	ctx.moveTo(cpoints[0][0],cpoints[0][1]);
+	var step = 0.01;
+	for (var pos = step; pos < 1; pos += step)
+		ctx.lineTo.apply(ctx, deCasteljau(cpoints, pos));
+	var end = cpoints[(cpoints.length|0)-1|0];
+	ctx.lineTo(end[0],end[1]);
+	ctx.stroke();
+};
 var paint = function() {
 	pos += step;
 	if (step > 0 && pos > 1) {
@@ -51,9 +61,11 @@ var paint = function() {
 		pos = 0;
 		step = -step;
 	}
+	ctx.clearRect(0,0,800,600);
+	baseBezier(ctx, cpoints);
 	vizDeCasteljau(ctx, cpoints, pos);
 };
-var interval = setInterval(paint, 50);
+var interval = setInterval(paint, 33);
 </script>
 </body>
 </html>
