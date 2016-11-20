@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html>
-<head><title>Knot Vector Demo</title></head>
-<body>
-<canvas id="canvas" width="800" height="600">No &lt;canvas&gt; support</canvas>
-<input id="monitor" />
-<script src="splines.js"></script>
+<meta charset=UTF-8>
+<title>Knot Vector Demo</title>
+<canvas id=canvas width=800 height=600>No &lt;canvas&gt; support</canvas>
+<input id=monitor />
+<script src=splines.js></script>
 <script>"use strict";
 /*
 knot vector manipulation demo
@@ -40,15 +39,7 @@ var controlMesh = function(ctx, cpoints) {
 		ctx.lineTo(cpoints[i][0],cpoints[i][1]);
 	ctx.stroke();
 };
-var paint = function() {
-	pos += step;
-	if (step > 0 && pos > 1) {
-		pos = 1;
-		step = -step;
-	} else if (step < 0 && pos < 0) {
-		pos = 0;
-		step = -step;
-	}
+animation(function(pos) {
 	ctx.clearRect(0,0,800,600);
 	var kv_cp = knots.slice();
 	var weight = .5 + 1.5*pos;
@@ -58,8 +49,5 @@ var paint = function() {
 	bSpline(ctx, 2, cpoints, kv_cp);
 	ctx.strokeStyle = "red";
 	controlMesh(ctx, cpoints);
-};
-var interval = setInterval(paint, 33);
+});
 </script>
-</body>
-</html>

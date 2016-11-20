@@ -130,3 +130,14 @@ function bSpline(ctx, degree, cpoints, knotvector) {
 	ctx.lineTo.apply(ctx, dehomogenize(cpoints[numPoints-1|0]));
 	ctx.stroke();
 }
+
+function animation(paint) {
+	var start = performance.now();
+	function animate(time) {
+		var seq = (time - start) % 2000;
+		var pos = seq > 1000 ? (2000 - seq) / 1000 : seq / 1000;
+		paint(pos);
+		requestAnimationFrame(animate);
+	}
+	animate(start);
+}
